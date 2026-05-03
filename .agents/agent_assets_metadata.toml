@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "S6j3pM3hAzKHCGE02VOgh"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "ai interview app icon"

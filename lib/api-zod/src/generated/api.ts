@@ -14,3 +14,147 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Start a new interview session and generate questions
+ */
+export const StartInterviewBody = zod.object({
+  interviewType: zod.enum(["technical", "hr", "mixed"]),
+  difficulty: zod.enum(["easy", "medium", "hard"]),
+  jobRole: zod.string(),
+  company: zod.string().optional(),
+  skills: zod.string().optional(),
+});
+
+/**
+ * @summary Get past interview sessions for the authenticated user
+ */
+export const GetInterviewHistoryResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  interviewType: zod.string(),
+  difficulty: zod.string(),
+  jobRole: zod.string(),
+  company: zod.string().nullish(),
+  skills: zod.string().nullish(),
+  status: zod.string(),
+  totalScore: zod.number().nullish(),
+  accuracyPercent: zod.number().nullish(),
+  timeTakenSeconds: zod.number().nullish(),
+  strengths: zod.array(zod.string()).nullish(),
+  weaknesses: zod.array(zod.string()).nullish(),
+  suggestions: zod.array(zod.string()).nullish(),
+  createdAt: zod.coerce.date(),
+  completedAt: zod.coerce.date().nullish(),
+});
+export const GetInterviewHistoryResponse = zod.array(
+  GetInterviewHistoryResponseItem,
+);
+
+/**
+ * @summary Get a session with its questions and answers
+ */
+export const GetInterviewSessionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetInterviewSessionResponse = zod.object({
+  session: zod.object({
+    id: zod.number(),
+    userId: zod.string(),
+    interviewType: zod.string(),
+    difficulty: zod.string(),
+    jobRole: zod.string(),
+    company: zod.string().nullish(),
+    skills: zod.string().nullish(),
+    status: zod.string(),
+    totalScore: zod.number().nullish(),
+    accuracyPercent: zod.number().nullish(),
+    timeTakenSeconds: zod.number().nullish(),
+    strengths: zod.array(zod.string()).nullish(),
+    weaknesses: zod.array(zod.string()).nullish(),
+    suggestions: zod.array(zod.string()).nullish(),
+    createdAt: zod.coerce.date(),
+    completedAt: zod.coerce.date().nullish(),
+  }),
+  questions: zod.array(
+    zod.object({
+      id: zod.number(),
+      sessionId: zod.number(),
+      questionNumber: zod.number(),
+      question: zod.string(),
+      topic: zod.string(),
+      subTopic: zod.string().nullish(),
+      questionType: zod.string(),
+      similarQuestion: zod.string().nullish(),
+      companyTags: zod.string().nullish(),
+    }),
+  ),
+  answers: zod.array(
+    zod.object({
+      id: zod.number(),
+      sessionId: zod.number(),
+      questionId: zod.number(),
+      userAnswer: zod.string(),
+      idealAnswer: zod.string().nullish(),
+      score: zod.number().nullish(),
+      feedback: zod.string().nullish(),
+      strengths: zod.string().nullish(),
+      weaknesses: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Submit an answer for a question
+ */
+export const SubmitAnswerBody = zod.object({
+  sessionId: zod.number(),
+  questionId: zod.number(),
+  userAnswer: zod.string(),
+});
+
+/**
+ * @summary Evaluate all answers for a session and generate report
+ */
+export const EvaluateInterviewBody = zod.object({
+  sessionId: zod.number(),
+  timeTakenSeconds: zod.number().optional(),
+});
+
+export const EvaluateInterviewResponse = zod.object({
+  session: zod.object({
+    id: zod.number(),
+    userId: zod.string(),
+    interviewType: zod.string(),
+    difficulty: zod.string(),
+    jobRole: zod.string(),
+    company: zod.string().nullish(),
+    skills: zod.string().nullish(),
+    status: zod.string(),
+    totalScore: zod.number().nullish(),
+    accuracyPercent: zod.number().nullish(),
+    timeTakenSeconds: zod.number().nullish(),
+    strengths: zod.array(zod.string()).nullish(),
+    weaknesses: zod.array(zod.string()).nullish(),
+    suggestions: zod.array(zod.string()).nullish(),
+    createdAt: zod.coerce.date(),
+    completedAt: zod.coerce.date().nullish(),
+  }),
+  questionResults: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      question: zod.string(),
+      topic: zod.string(),
+      questionType: zod.string(),
+      similarQuestion: zod.string().nullish(),
+      companyTags: zod.string().nullish(),
+      userAnswer: zod.string(),
+      idealAnswer: zod.string(),
+      score: zod.number(),
+      feedback: zod.string(),
+      strengths: zod.string(),
+      weaknesses: zod.string(),
+    }),
+  ),
+});

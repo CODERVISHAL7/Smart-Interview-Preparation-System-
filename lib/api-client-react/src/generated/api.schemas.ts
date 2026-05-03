@@ -8,3 +8,118 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ApiError {
+  error: string;
+}
+
+export type StartInterviewBodyInterviewType =
+  (typeof StartInterviewBodyInterviewType)[keyof typeof StartInterviewBodyInterviewType];
+
+export const StartInterviewBodyInterviewType = {
+  technical: "technical",
+  hr: "hr",
+  mixed: "mixed",
+} as const;
+
+export type StartInterviewBodyDifficulty =
+  (typeof StartInterviewBodyDifficulty)[keyof typeof StartInterviewBodyDifficulty];
+
+export const StartInterviewBodyDifficulty = {
+  easy: "easy",
+  medium: "medium",
+  hard: "hard",
+} as const;
+
+export interface StartInterviewBody {
+  interviewType: StartInterviewBodyInterviewType;
+  difficulty: StartInterviewBodyDifficulty;
+  jobRole: string;
+  company?: string;
+  skills?: string;
+}
+
+export interface InterviewSession {
+  id: number;
+  userId: string;
+  interviewType: string;
+  difficulty: string;
+  jobRole: string;
+  company?: string | null;
+  skills?: string | null;
+  status: string;
+  totalScore?: number | null;
+  accuracyPercent?: number | null;
+  timeTakenSeconds?: number | null;
+  strengths?: string[] | null;
+  weaknesses?: string[] | null;
+  suggestions?: string[] | null;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export interface InterviewQuestion {
+  id: number;
+  sessionId: number;
+  questionNumber: number;
+  question: string;
+  topic: string;
+  subTopic?: string | null;
+  questionType: string;
+  similarQuestion?: string | null;
+  companyTags?: string | null;
+}
+
+export interface InterviewAnswer {
+  id: number;
+  sessionId: number;
+  questionId: number;
+  userAnswer: string;
+  idealAnswer?: string | null;
+  score?: number | null;
+  feedback?: string | null;
+  strengths?: string | null;
+  weaknesses?: string | null;
+}
+
+export interface InterviewSessionWithQuestions {
+  session: InterviewSession;
+  questions: InterviewQuestion[];
+}
+
+export interface InterviewSessionDetail {
+  session: InterviewSession;
+  questions: InterviewQuestion[];
+  answers: InterviewAnswer[];
+}
+
+export interface SubmitAnswerBody {
+  sessionId: number;
+  questionId: number;
+  userAnswer: string;
+}
+
+export interface EvaluateInterviewBody {
+  sessionId: number;
+  timeTakenSeconds?: number;
+}
+
+export interface QuestionResult {
+  questionId: number;
+  question: string;
+  topic: string;
+  questionType: string;
+  similarQuestion?: string | null;
+  companyTags?: string | null;
+  userAnswer: string;
+  idealAnswer: string;
+  score: number;
+  feedback: string;
+  strengths: string;
+  weaknesses: string;
+}
+
+export interface EvaluationResult {
+  session: InterviewSession;
+  questionResults: QuestionResult[];
+}

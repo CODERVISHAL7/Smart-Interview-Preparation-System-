@@ -1,0 +1,271 @@
+Build a **mobile application (Android-first, but cross-platform preferred using React Native with Expo)** named **“AI Smart Interview Prep”**.
+
+The app is an AI-powered interview preparation system that simulates real interview scenarios, evaluates answers, and provides detailed feedback, including reference insights.
+
+---
+
+### 🎯 CORE OBJECTIVE
+
+Create an intelligent interview practice system where:
+
+* Users can practice mock interviews
+* AI generates context-aware questions
+* AI evaluates answers
+* System provides detailed feedback + overall performance analysis
+* System shows reference insights (similar previously asked questions)
+
+---
+
+### 🧱 TECH STACK REQUIREMENTS
+
+Frontend:
+
+* React Native (Expo)
+* Clean, modern UI (dark + light mode)
+
+Backend:
+
+* Node.js + Express (or serverless functions)
+* REST API architecture
+
+Database:
+
+* MongoDB (preferred)
+
+AI Integration:
+
+* Use OpenAI API (GPT models) for:
+
+  * Question generation
+  * Answer evaluation
+  * Feedback generation
+
+Optional:
+
+* Speech-to-text (Web Speech API or Expo voice libraries)
+
+---
+
+### 📱 MAIN FEATURES
+
+#### 1. 🔐 Authentication
+
+* User signup/login (email/password)
+* Store user profile
+
+---
+
+#### 2. 🎯 Interview Setup Screen
+
+User selects:
+
+* Interview Type: Technical / HR / Mixed
+* Difficulty: Easy / Medium / Hard
+* Job Role (required)
+* Company Name (optional)
+* Skills / Description (optional)
+
+---
+
+#### 3. 🤖 AI QUESTION GENERATION
+
+After setup:
+
+* Generate exactly 10 questions using AI
+* Questions must be:
+
+  * Context-aware (based on job role + difficulty)
+  * Mixed types (conceptual, scenario, HR)
+
+---
+
+#### 4. 📚 REFERENCE & SIMILAR QUESTION INSIGHT (IMPORTANT FEATURE)
+
+For each generated question, also show:
+
+* Topic (e.g., DBMS, OOP, HR)
+* Sub-topic
+* Similar previously asked question (from dataset or AI-generated approximation)
+* Company tags (e.g., TCS, Infosys, Wipro pattern-based)
+* Question type (Concept / Scenario / Behavioral)
+
+NOTE:
+Do NOT claim real-time scraping. Instead simulate or match using stored dataset + AI similarity.
+
+---
+
+#### 5. 📝 ANSWER SUBMISSION FLOW
+
+* Show one question at a time
+* User enters answer (text input)
+* Button: “Submit Answer”
+* Store each answer
+
+---
+
+#### 6. 🧠 AI ANSWER EVALUATION
+
+After all 10 answers submitted:
+For each question generate:
+
+* Score (0–10)
+* Ideal Answer
+* Feedback (what was good + what is missing)
+
+Use:
+
+* Keyword matching logic (basic)
+* AI semantic evaluation (main)
+
+---
+
+#### 7. 📊 RESULT SCREEN (PER QUESTION)
+
+Display:
+
+* Question
+* User Answer
+* Ideal Answer
+* Score
+* Feedback
+* Reference insights again
+
+---
+
+#### 8. 📈 FINAL PERFORMANCE REPORT
+
+Generate overall report including:
+
+Metrics:
+
+* Total Score
+* Accuracy %
+* Time taken
+
+Analysis:
+
+* Strengths (topics user performed well in)
+* Weaknesses (topics needing improvement)
+* Suggestions (what to study next)
+
+---
+
+#### 9. 💾 DATA STORAGE
+
+Store in MongoDB:
+
+* User info
+* Interview sessions
+* Questions
+* Answers
+* Scores
+* Reports
+
+---
+
+#### 10. 📊 DASHBOARD
+
+User can view:
+
+* Past interview history
+* Performance trends
+* Improvement over time
+
+---
+
+### 🏗️ SYSTEM ARCHITECTURE LOGIC
+
+Flow:
+Login → Setup Interview → Generate Questions + Reference Mapping →
+Answer Questions → AI Evaluation →
+Per Question Feedback → Final Report →
+Save Data → Dashboard
+
+---
+
+### 🔌 API DESIGN (REQUIRED)
+
+Create endpoints:
+
+POST /auth/register
+POST /auth/login
+
+POST /interview/start
+→ generates questions
+
+POST /interview/submit
+→ submit answers
+
+POST /interview/evaluate
+→ returns evaluation + report
+
+GET /interview/history
+→ fetch past sessions
+
+---
+
+### 🧠 AI PROMPT DESIGN (IMPORTANT)
+
+For question generation:
+
+* Include job role, difficulty, and skills
+
+For evaluation:
+
+* Compare user answer vs expected answer
+* Return structured JSON:
+  {
+  score,
+  ideal_answer,
+  feedback,
+  strengths,
+  weaknesses
+  }
+
+---
+
+### 🎨 UI REQUIREMENTS
+
+* Clean dashboard
+* Card-based question UI
+* Progress indicator (Question 3/10)
+* Loading animation during AI processing
+* Result visualization (charts optional)
+
+---
+
+### 🚀 ADVANCED FEATURES (OPTIONAL BUT ADD IF POSSIBLE)
+
+* Voice input answers
+* Timer-based mock interview
+* Resume-based question generation
+* Export report as PDF
+
+---
+
+### ⚠️ IMPORTANT CONSTRAINTS
+
+* Keep code modular and clean
+* Use reusable components
+* Maintain proper folder structure
+* Add comments for major logic
+* Handle API errors properly
+
+---
+
+### 📦 OUTPUT REQUIREMENTS
+
+* Full working mobile app (Expo project)
+* Backend server code
+* README with setup steps
+* Environment variable support for API keys
+
+---
+
+### 🎓 FINAL GOAL
+
+The app should simulate a **real interview experience**, provide **AI-driven evaluation**, and give **actionable insights** to improve user performance.
+
+Make the UI modern and the system scalable.
+
+---

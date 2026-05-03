@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: interview
+    description: Interview session operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /interview/start:
+    post:
+      operationId: startInterview
+      tags: [interview]
+      summary: Start a new interview session and generate questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartInterviewBody"
+      responses:
+        "201":
+          description: Interview session created with generated questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionWithQuestions"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /interview/history:
+    get:
+      operationId: getInterviewHistory
+      tags: [interview]
+      summary: Get past interview sessions for the authenticated user
+      responses:
+        "200":
+          description: List of past sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InterviewSession"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /interview/sessions/{id}:
+    get:
+      operationId: getInterviewSession
+      tags: [interview]
+      summary: Get a session with its questions and answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session with questions and answers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /interview/submit:
+    post:
+      operationId: submitAnswer
+      tags: [interview]
+      summary: Submit an answer for a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerBody"
+      responses:
+        "201":
+          description: Answer saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewAnswer"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /interview/evaluate:
+    post:
+      operationId: evaluateInterview
+      tags: [interview]
+      summary: Evaluate all answers for a session and generate report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluateInterviewBody"
+      responses:
+        "200":
+          description: Evaluation complete with results and report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +151,254 @@ components:
           type: string
       required:
         - status
-
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    StartInterviewBody:
+      type: object
+      properties:
+        interviewType:
+          type: string
+          enum: [technical, hr, mixed]
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        jobRole:
+          type: string
+        company:
+          type: string
+        skills:
+          type: string
+      required:
+        - interviewType
+        - difficulty
+        - jobRole
+    InterviewSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        interviewType:
+          type: string
+        difficulty:
+          type: string
+        jobRole:
+          type: string
+        company:
+          type: string
+          nullable: true
+        skills:
+          type: string
+          nullable: true
+        status:
+          type: string
+        totalScore:
+          type: number
+          nullable: true
+        accuracyPercent:
+          type: number
+          nullable: true
+        timeTakenSeconds:
+          type: integer
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        weaknesses:
+          type: array
+          items:
+            type: string
+          nullable: true
+        suggestions:
+          type: array
+          items:
+            type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - userId
+        - interviewType
+        - difficulty
+        - jobRole
+        - status
+        - createdAt
+    InterviewQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        questionNumber:
+          type: integer
+        question:
+          type: string
+        topic:
+          type: string
+        subTopic:
+          type: string
+          nullable: true
+        questionType:
+          type: string
+        similarQuestion:
+          type: string
+          nullable: true
+        companyTags:
+          type: string
+          nullable: true
+      required:
+        - id
+        - sessionId
+        - questionNumber
+        - question
+        - topic
+        - questionType
+    InterviewAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        questionId:
+          type: integer
+        userAnswer:
+          type: string
+        idealAnswer:
+          type: string
+          nullable: true
+        score:
+          type: number
+          nullable: true
+        feedback:
+          type: string
+          nullable: true
+        strengths:
+          type: string
+          nullable: true
+        weaknesses:
+          type: string
+          nullable: true
+      required:
+        - id
+        - sessionId
+        - questionId
+        - userAnswer
+    InterviewSessionWithQuestions:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/InterviewSession"
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestion"
+      required:
+        - session
+        - questions
+    InterviewSessionDetail:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/InterviewSession"
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestion"
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewAnswer"
+      required:
+        - session
+        - questions
+        - answers
+    SubmitAnswerBody:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+        questionId:
+          type: integer
+        userAnswer:
+          type: string
+      required:
+        - sessionId
+        - questionId
+        - userAnswer
+    EvaluateInterviewBody:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+        timeTakenSeconds:
+          type: integer
+      required:
+        - sessionId
+    QuestionResult:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        question:
+          type: string
+        topic:
+          type: string
+        questionType:
+          type: string
+        similarQuestion:
+          type: string
+          nullable: true
+        companyTags:
+          type: string
+          nullable: true
+        userAnswer:
+          type: string
+        idealAnswer:
+          type: string
+        score:
+          type: number
+        feedback:
+          type: string
+        strengths:
+          type: string
+        weaknesses:
+          type: string
+      required:
+        - questionId
+        - question
+        - topic
+        - questionType
+        - userAnswer
+        - idealAnswer
+        - score
+        - feedback
+        - strengths
+        - weaknesses
+    EvaluationResult:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/InterviewSession"
+        questionResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionResult"
+      required:
+        - session
+        - questionResults

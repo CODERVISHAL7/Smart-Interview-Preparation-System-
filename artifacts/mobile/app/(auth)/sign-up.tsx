@@ -40,10 +40,12 @@ export default function SignUpScreen() {
     setLoading(true);
     setError("");
     try {
-      await signUp.create({ emailAddress: email, password });
+      const result = await signUp.create({ emailAddress: email, password });
+      console.log("SignUp create result:", result);
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setPendingVerification(true);
     } catch (err: any) {
+      console.error("SignUp error:", err);
       const msg = err?.errors?.[0]?.message ?? err?.message ?? "Sign up failed";
       setError(msg);
     } finally {
@@ -243,7 +245,7 @@ export default function SignUpScreen() {
               style={[styles.passwordInput, { color: colors.foreground }]}
               value={password}
               onChangeText={setPassword}
-              placeholder="Create a password"
+              placeholder="Create a password (min 8 characters)"
               placeholderTextColor={colors.mutedForeground}
               secureTextEntry={!showPassword}
             />
@@ -258,10 +260,16 @@ export default function SignUpScreen() {
               />
             </TouchableOpacity>
           </View>
+          <Text style={[styles.hintText, { color: colors.mutedForeground }]}>
+            Password must be at least 8 characters
+          </Text>
         </View>
 
         {!!error && (
-          <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          <View style={[styles.errorBox, { backgroundColor: colors.destructive + "12", borderColor: colors.destructive + "33" }]}>
+            <Feather name="alert-circle" size={16} color={colors.destructive} />
+            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          </View>
         )}
 
         <TouchableOpacity
@@ -392,7 +400,9 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   eyeBtn: { padding: 4 },
-  errorText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  hintText: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -4 },
+  errorBox: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 12, borderRadius: 10, borderWidth: 1 },
+  errorText: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
   primaryBtn: {
     padding: 16,
     borderRadius: 12,

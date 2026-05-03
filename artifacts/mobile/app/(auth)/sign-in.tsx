@@ -42,9 +42,11 @@ export default function SignInScreen() {
         identifier: email,
         password,
       });
-      if (result.status === "complete") {
+      if (result.status === "complete" && result.createdSessionId) {
         await setActive!({ session: result.createdSessionId });
         router.replace("/(tabs)");
+      } else {
+        setError("Sign in failed. Please try again.");
       }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.message ?? err?.message ?? "Sign in failed";

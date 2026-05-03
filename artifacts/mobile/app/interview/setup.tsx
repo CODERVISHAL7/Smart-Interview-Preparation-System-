@@ -81,16 +81,20 @@ export default function SetupScreen() {
     if (!isValid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    setSetup({ interviewType, difficulty, jobRole, company, skills });
+    try {
+      setSetup({ interviewType, difficulty, jobRole, company, skills });
 
-    const result = await startInterview.mutateAsync({
-      data: { interviewType, difficulty, jobRole, company: company || undefined, skills: skills || undefined },
-    });
+      const result = await startInterview.mutateAsync({
+        data: { interviewType, difficulty, jobRole, company: company || undefined, skills: skills || undefined },
+      });
 
-    setSessionId(result.session.id);
-    setQuestions(result.questions as any);
-    setStartTime(Date.now());
-    router.push("/interview/session");
+      setSessionId(result.session.id);
+      setQuestions(result.questions as any);
+      setStartTime(Date.now());
+      router.push("/interview/session");
+    } catch (err) {
+      Alert.alert("Error", "Failed to generate questions. Please try again.");
+    }
   };
 
   return (

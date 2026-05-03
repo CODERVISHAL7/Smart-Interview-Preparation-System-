@@ -27,19 +27,20 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 router.post("/interview/start", requireAuth, async (req: any, res: any) => {
-  const { interviewType, difficulty, jobRole, company, skills } = req.body;
-  const userId: string = req.userId;
+  try {
+    const { interviewType, difficulty, jobRole, company, skills } = req.body;
+    const userId: string = req.userId;
 
-  if (!interviewType || !difficulty || !jobRole) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+    if (!interviewType || !difficulty || !jobRole) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-  const [session] = await db
-    .insert(interviewSessionsTable)
-    .values({ userId, interviewType, difficulty, jobRole, company, skills, status: "in_progress" })
-    .returning();
+    const [session] = await db
+      .insert(interviewSessionsTable)
+      .values({ userId, interviewType, difficulty, jobRole, company, skills, status: "in_progress" })
+      .returning();
 
-  const prompt = `You are an expert interviewer. Generate exactly 10 interview questions for a ${jobRole} position.
+    const prompt = `You are an expert interviewer. Generate exactly 10 interview questions for a ${jobRole} position.
 
 Interview type: ${interviewType}
 Difficulty: ${difficulty}
@@ -100,70 +101,90 @@ Respond in JSON only with this structure:
     )
     .returning();
 
-  res.status(201).json({ session, questions: insertedQuestions });
+    res.status(201).json({ session, questions: insertedQuestions });
+  } catch (error: any) {
+    req.log.error({ error }, "Failed to start interview");
+    res.status(500).json({ error: "Failed to generate questions" });
+  }
 });
 
 router.get("/interview/history", requireAuth, async (req: any, res: any) => {
-  const userId: string = req.userId;
-  const sessions = await db
-    .select()
-    .from(interviewSessionsTable)
-    .where(eq(interviewSessionsTable.userId, userId))
-    .orderBy(interviewSessionsTable.createdAt);
+  try {
+    const userId: string = req.userId;
+    const sessions = await db
+      .select()
+      .from(interviewSessionsTable)
+      .where(eq(interviewSessionsTable.userId, userId))
+      .orderBy(interviewSessionsTable.createdAt);
 
-  res.json(sessions.reverse());
+    res.json(sessions.reverse());
+  } catch (error: any) {
+    req.log.error({ error }, "Failed to fetch interview history");
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
 });
 
 router.get("/interview/sessions/:id", requireAuth, async (req: any, res: any) => {
-  const userId: string = req.userId;
-  const id = parseInt(req.params.id);
+  try {
+    const userId: string = req.userId;
+    const id = parseInt(req.params.id);
 
-  const [session] = await db
-    .select()
-    .from(interviewSessionsTable)
-    .where(and(eq(interviewSessionsTable.id, id), eq(interviewSessionsTable.userId, userId)));
+    const [session] = await db
+      .select()
+      .from(interviewSessionsTable)
+      .where(and(eq(interviewSessionsTable.id, id), eq(interviewSessionsTable.userId, userId)));
 
-  if (!session) {
-    return res.status(404).json({ error: "Session not found" });
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    const questions = await db
+      .select()
+      .from(interviewQuestionsTable)
+      .where(eq(interviewQuestionsTable.sessionId, id))
+      .orderBy(interviewQuestionsTable.questionNumber);
+
+    const answers = await db
+      .select()
+      .from(interviewAnswersTable)
+      .where(eq(interviewAnswersTable.sessionId, id));
+
+    res.json({ session, questions, answers });
+  } catch (error: any) {
+    req.log.error({ error }, "Failed to fetch session");
+    res.status(500).json({ error: "Failed to fetch session" });
   }
-
-  const questions = await db
-    .select()
-    .from(interviewQuestionsTable)
-    .where(eq(interviewQuestionsTable.sessionId, id))
-    .orderBy(interviewQuestionsTable.questionNumber);
-
-  const answers = await db
-    .select()
-    .from(interviewAnswersTable)
-    .where(eq(interviewAnswersTable.sessionId, id));
-
-  res.json({ session, questions, answers });
 });
 
 router.post("/interview/submit", requireAuth, async (req: any, res: any) => {
-  const { sessionId, questionId, userAnswer } = req.body;
+  try {
+    const { sessionId, questionId, userAnswer } = req.body;
 
-  if (!sessionId || !questionId || !userAnswer) {
-    return res.status(400).json({ error: "Missing required fields" });
+    if (!sessionId || !questionId || !userAnswer) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const [answer] = await db
+      .insert(interviewAnswersTable)
+      .values({ sessionId, questionId, userAnswer })
+      .returning();
+
+    res.status(201).json(answer);
+  } catch (error: any) {
+    req.log.error({ error }, "Failed to submit answer");
+    res.status(500).json({ error: "Failed to save answer" });
   }
-
-  const [answer] = await db
-    .insert(interviewAnswersTable)
-    .values({ sessionId, questionId, userAnswer })
-    .returning();
-
-  res.status(201).json(answer);
 });
 
 router.post("/interview/evaluate", requireAuth, async (req: any, res: any) => {
-  const userId: string = req.userId;
-  const { sessionId, timeTakenSeconds } = req.body;
+  try {
+    const userId: string = req.userId;
+    const { sessionId, timeTakenSeconds } = req.body;
 
-  const [session] = await db
-    .select()
-    .from(interviewSessionsTable)
-    .where(and(eq(interviewSessionsTable.id, sessionId), eq(interviewSessionsTable.userId, userId)));
+    const [session] = await db
+      .select()
+      .from(interviewSessionsTable)
+      .where(and(eq(interviewSessionsTable.id, sessionId), eq(interviewSessionsTable.userId, userId)));
 
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
@@ -225,66 +246,71 @@ Respond in JSON only:
   const evaluations: any[] = evalData.evaluations ?? [];
   const overall = evalData.overall ?? {};
 
-  for (const ev of evaluations) {
-    const q = questions.find((q) => q.questionNumber === evaluations.indexOf(ev) + 1);
-    if (!q) continue;
-    await db
-      .update(interviewAnswersTable)
+    for (let i = 0; i < evaluations.length; i++) {
+      const ev = evaluations[i];
+      const q = questions[i];
+      if (!q) continue;
+      await db
+        .update(interviewAnswersTable)
+        .set({
+          idealAnswer: ev.idealAnswer,
+          score: ev.score,
+          feedback: ev.feedback,
+          strengths: ev.strengths,
+          weaknesses: ev.weaknesses,
+          evaluatedAt: new Date(),
+        })
+        .where(and(eq(interviewAnswersTable.sessionId, sessionId), eq(interviewAnswersTable.questionId, q.id)));
+    }
+
+    const totalScore = evaluations.reduce((sum, ev) => sum + (ev.score ?? 0), 0);
+    const maxScore = evaluations.length * 10;
+    const accuracyPercent = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+
+    const [updatedSession] = await db
+      .update(interviewSessionsTable)
       .set({
-        idealAnswer: ev.idealAnswer,
-        score: ev.score,
-        feedback: ev.feedback,
-        strengths: ev.strengths,
-        weaknesses: ev.weaknesses,
-        evaluatedAt: new Date(),
+        status: "completed",
+        totalScore,
+        accuracyPercent,
+        timeTakenSeconds: timeTakenSeconds ?? null,
+        strengths: overall.strengths ?? [],
+        weaknesses: overall.weaknesses ?? [],
+        suggestions: overall.suggestions ?? [],
+        completedAt: new Date(),
       })
-      .where(and(eq(interviewAnswersTable.sessionId, sessionId), eq(interviewAnswersTable.questionId, q.id)));
+      .where(eq(interviewSessionsTable.id, sessionId))
+      .returning();
+
+    const updatedAnswers = await db
+      .select()
+      .from(interviewAnswersTable)
+      .where(eq(interviewAnswersTable.sessionId, sessionId));
+
+    const questionResults = questions.map((q, i) => {
+      const ev = evaluations[i] ?? {};
+      const ans = updatedAnswers.find((a) => a.questionId === q.id);
+      return {
+        questionId: q.id,
+        question: q.question,
+        topic: q.topic,
+        questionType: q.questionType,
+        similarQuestion: q.similarQuestion,
+        companyTags: q.companyTags,
+        userAnswer: ans?.userAnswer ?? "",
+        idealAnswer: ans?.idealAnswer ?? "",
+        score: ans?.score ?? 0,
+        feedback: ans?.feedback ?? "",
+        strengths: ans?.strengths ?? "",
+        weaknesses: ans?.weaknesses ?? "",
+      };
+    });
+
+    res.json({ session: updatedSession, questionResults });
+  } catch (error: any) {
+    req.log.error({ error }, "Failed to evaluate interview");
+    res.status(500).json({ error: "Failed to evaluate interview" });
   }
-
-  const totalScore = evaluations.reduce((sum, ev) => sum + (ev.score ?? 0), 0);
-  const maxScore = evaluations.length * 10;
-  const accuracyPercent = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
-
-  const [updatedSession] = await db
-    .update(interviewSessionsTable)
-    .set({
-      status: "completed",
-      totalScore,
-      accuracyPercent,
-      timeTakenSeconds: timeTakenSeconds ?? null,
-      strengths: overall.strengths ?? [],
-      weaknesses: overall.weaknesses ?? [],
-      suggestions: overall.suggestions ?? [],
-      completedAt: new Date(),
-    })
-    .where(eq(interviewSessionsTable.id, sessionId))
-    .returning();
-
-  const updatedAnswers = await db
-    .select()
-    .from(interviewAnswersTable)
-    .where(eq(interviewAnswersTable.sessionId, sessionId));
-
-  const questionResults = questions.map((q, i) => {
-    const ev = evaluations[i] ?? {};
-    const ans = updatedAnswers.find((a) => a.questionId === q.id);
-    return {
-      questionId: q.id,
-      question: q.question,
-      topic: q.topic,
-      questionType: q.questionType,
-      similarQuestion: q.similarQuestion,
-      companyTags: q.companyTags,
-      userAnswer: ans?.userAnswer ?? "",
-      idealAnswer: ans?.idealAnswer ?? "",
-      score: ans?.score ?? 0,
-      feedback: ans?.feedback ?? "",
-      strengths: ans?.strengths ?? "",
-      weaknesses: ans?.weaknesses ?? "",
-    };
-  });
-
-  res.json({ session: updatedSession, questionResults });
 });
 
 export default router;

@@ -57,9 +57,11 @@ export default function SignUpScreen() {
     setError("");
     try {
       const result = await signUp.attemptEmailAddressVerification({ code });
-      if (result.status === "complete") {
+      if (result.status === "complete" && result.createdSessionId) {
         await setActive!({ session: result.createdSessionId });
         router.replace("/(tabs)");
+      } else {
+        setError("Verification failed. Please try again.");
       }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.message ?? err?.message ?? "Verification failed";
@@ -149,7 +151,15 @@ export default function SignUpScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => signUp?.prepareEmailAddressVerification({ strategy: "email_code" })}
+            onPress={async () => {
+              try {
+                await signUp?.prepareEmailAddressVerification({ strategy: "email_code" });
+                setError("");
+              } catch (err: any) {
+                const msg = err?.errors?.[0]?.message ?? err?.message ?? "Failed to resend code";
+                setError(msg);
+              }
+            }}
             style={styles.resendBtn}
           >
             <Text style={[styles.resendText, { color: colors.primary }]}>Resend code</Text>

@@ -75,15 +75,19 @@ export default function SessionScreen() {
     if (!sessionId) return;
     const timeTaken = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    const result = await evaluateInterview.mutateAsync({
-      data: { sessionId, timeTakenSeconds: timeTaken },
-    });
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      const result = await evaluateInterview.mutateAsync({
+        data: { sessionId, timeTakenSeconds: timeTaken },
+      });
 
-    router.replace({
-      pathname: "/interview/report",
-      params: { sessionId: sessionId.toString() },
-    });
+      router.replace({
+        pathname: "/interview/report",
+        params: { sessionId: sessionId.toString() },
+      });
+    } catch (err) {
+      Alert.alert("Error", "Failed to evaluate interview. Please try again.");
+    }
   };
 
   const allAnswered = questions.every((q) => submittedIds.has(q.id));

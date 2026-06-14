@@ -119,6 +119,27 @@ export interface QuestionResult {
   weaknesses: string;
 }
 
+export type ChatMessageRole =
+  (typeof ChatMessageRole)[keyof typeof ChatMessageRole];
+
+export const ChatMessageRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export interface ChatMessage {
+  role: ChatMessageRole;
+  content: string;
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[];
+}
+
+export interface ChatResponse {
+  reply: string;
+}
+
 export interface EvaluationResult {
   session: InterviewSession;
   questionResults: QuestionResult[];

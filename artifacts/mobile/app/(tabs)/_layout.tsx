@@ -22,6 +22,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "clock", selected: "clock.fill" }} />
         <Label>History</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="chat">
+        <Icon sf={{ default: "message", selected: "message.fill" }} />
+        <Label>AI Coach</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person", selected: "person.fill" }} />
         <Label>Profile</Label>
@@ -84,6 +88,18 @@ function ClassicTabLayout() {
               <SymbolView name="clock" tintColor={color} size={24} />
             ) : (
               <Feather name="clock" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "AI Coach",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="message" tintColor={color} size={24} />
+            ) : (
+              <Feather name="message-circle" size={22} color={color} />
             ),
         }}
       />

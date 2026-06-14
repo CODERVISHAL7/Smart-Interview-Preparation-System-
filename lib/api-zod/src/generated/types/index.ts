@@ -7,6 +7,10 @@
  */
 
 export * from "./apiError";
+export * from "./chatMessage";
+export * from "./chatMessageRole";
+export * from "./chatRequest";
+export * from "./chatResponse";
 export * from "./evaluateInterviewBody";
 export * from "./evaluationResult";
 export * from "./healthStatus";

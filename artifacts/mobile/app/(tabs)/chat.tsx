@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSendChatMessage } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
@@ -23,13 +25,26 @@ interface Message {
 }
 
 const SUGGESTIONS = [
-  "How do I answer 'Tell me about yourself'?",
-  "Explain Big O notation simply",
-  "STAR method for behavioral questions",
-  "How to prepare for system design?",
-  "Common React interview questions",
-  "Salary negotiation tips",
+  { icon: "user", text: "How do I answer 'Tell me about yourself'?" },
+  { icon: "code", text: "Explain Big O notation simply" },
+  { icon: "star", text: "STAR method for behavioral questions" },
+  { icon: "server", text: "How to prepare for system design?" },
+  { icon: "zap", text: "Common React interview questions" },
+  { icon: "trending-up", text: "Salary negotiation tips" },
 ];
+
+function TypingDots({ color }: { color: string }) {
+  return (
+    <View style={styles.dots}>
+      {[0, 1, 2].map((i) => (
+        <View
+          key={i}
+          style={[styles.dot, { backgroundColor: color, opacity: 0.4 + i * 0.2 }]}
+        />
+      ))}
+    </View>
+  );
+}
 
 function MessageBubble({ msg }: { msg: Message }) {
   const colors = useColors();
@@ -38,9 +53,14 @@ function MessageBubble({ msg }: { msg: Message }) {
   return (
     <View style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAI]}>
       {!isUser && (
-        <View style={[styles.aiBadge, { backgroundColor: colors.primary }]}>
-          <Feather name="cpu" size={13} color="#fff" />
-        </View>
+        <LinearGradient
+          colors={[colors.primary, colors.accent ?? colors.primary]}
+          style={styles.aiBadge}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Feather name="zap" size={12} color="#fff" />
+        </LinearGradient>
       )}
       <View
         style={[
@@ -66,12 +86,13 @@ function MessageBubble({ msg }: { msg: Message }) {
 export default function ChatScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
       content:
-        "Hi! I'm your AI interview coach 👋\n\nAsk me anything about interviews — technical concepts, how to answer tricky questions, company-specific prep, or career advice. I'm here to help!",
+        "Hi! I'm your AI interview coach 🚀\n\nAsk me anything — technical concepts, behavioral answers, company-specific prep, or salary tips. I'm here to help you land the job!",
     },
   ]);
   const [input, setInput] = useState("");
@@ -93,7 +114,7 @@ export default function ChatScreen() {
     try {
       const apiMessages = updatedMessages
         .filter((m) => m.id !== "welcome")
-        .map((m) => ({ role: m.role, content: m.content }));
+        .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
       const result = await sendMessage.mutateAsync({
         data: { messages: apiMessages.length > 0 ? apiMessages : [{ role: "user", content }] },
@@ -115,6 +136,17 @@ export default function ChatScreen() {
     }
   };
 
+  const handleReset = () => {
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content:
+          "Hi! I'm your AI interview coach 🚀\n\nAsk me anything — technical concepts, behavioral answers, company-specific prep, or salary tips. I'm here to help you land the job!",
+      },
+    ]);
+  };
+
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
@@ -125,132 +157,129 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? tabBarHeight : 0}
     >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              paddingTop: insets.top + topPaddingWeb + 12,
-              borderBottomColor: colors.border,
-              backgroundColor: colors.background,
-            },
-          ]}
+      <View style={[styles.header, { paddingTop: insets.top + topPaddingWeb, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <LinearGradient
+          colors={[colors.primary, colors.accent ?? colors.primary]}
+          style={styles.headerIcon}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <View style={[styles.headerIcon, { backgroundColor: colors.primary }]}>
-            <Feather name="cpu" size={18} color="#fff" />
-          </View>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>AI Coach</Text>
+          <Feather name="zap" size={18} color="#fff" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>AI Coach</Text>
+          <View style={styles.headerStatusRow}>
+            <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-              Your interview prep assistant
+              Online · Powered by GPT
             </Text>
           </View>
-          {messages.length > 1 && (
-            <TouchableOpacity
-              style={[styles.clearBtn, { borderColor: colors.border }]}
-              onPress={() =>
-                setMessages([
-                  {
-                    id: "welcome",
-                    role: "assistant",
-                    content:
-                      "Hi! I'm your AI interview coach 👋\n\nAsk me anything about interviews — technical concepts, how to answer tricky questions, company-specific prep, or career advice. I'm here to help!",
-                  },
-                ])
-              }
-              activeOpacity={0.7}
-            >
-              <Feather name="refresh-cw" size={14} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          )}
         </View>
+        {messages.length > 1 && (
+          <TouchableOpacity
+            style={[styles.clearBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            onPress={handleReset}
+            activeOpacity={0.7}
+          >
+            <Feather name="rotate-ccw" size={13} color={colors.mutedForeground} />
+            <Text style={[styles.clearBtnText, { color: colors.mutedForeground }]}>Reset</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
-          contentContainerStyle={[
-            styles.messageList,
-            { paddingBottom: insets.bottom + 100 },
-          ]}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            isLoading ? (
-              <View style={[styles.bubbleRow, styles.bubbleRowAI]}>
-                <View style={[styles.aiBadge, { backgroundColor: colors.primary }]}>
-                  <Feather name="cpu" size={13} color="#fff" />
-                </View>
-                <View style={[styles.bubble, styles.aiBubble, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        keyExtractor={(m) => m.id}
+        contentContainerStyle={[styles.messageList, { paddingBottom: 16 }]}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          isLoading ? (
+            <View style={[styles.bubbleRow, styles.bubbleRowAI, { marginTop: 8 }]}>
+              <LinearGradient
+                colors={[colors.primary, colors.accent ?? colors.primary]}
+                style={styles.aiBadge}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Feather name="zap" size={12} color="#fff" />
+              </LinearGradient>
+              <View style={[styles.bubble, styles.aiBubble, { backgroundColor: colors.card, borderColor: colors.border, paddingVertical: 14 }]}>
+                <TypingDots color={colors.primary} />
               </View>
-            ) : showSuggestions ? (
-              <View style={styles.suggestionsWrap}>
-                <Text style={[styles.suggestLabel, { color: colors.mutedForeground }]}>
-                  Try asking:
-                </Text>
-                <View style={styles.suggestions}>
-                  {SUGGESTIONS.map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[styles.suggestionChip, { backgroundColor: colors.card, borderColor: colors.border }]}
-                      onPress={() => handleSend(s)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.suggestionText, { color: colors.foreground }]}>{s}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            ) : null
-          }
-          renderItem={({ item }) => <MessageBubble msg={item} />}
-        />
+            </View>
+          ) : showSuggestions ? (
+            <View style={styles.suggestionsWrap}>
+              <Text style={[styles.suggestLabel, { color: colors.mutedForeground }]}>
+                ✦ Suggested topics
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
+                {SUGGESTIONS.map((s) => (
+                  <TouchableOpacity
+                    key={s.text}
+                    style={[styles.suggestionChip, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => handleSend(s.text)}
+                    activeOpacity={0.75}
+                  >
+                    <Feather name={s.icon as any} size={13} color={colors.primary} />
+                    <Text style={[styles.suggestionText, { color: colors.foreground }]}>{s.text}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) => <MessageBubble msg={item} />}
+      />
 
-        <View
-          style={[
-            styles.inputBar,
-            {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
-              paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 12),
-            },
-          ]}
-        >
-          <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <TextInput
-              style={[styles.input, { color: colors.foreground }]}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Ask your interview coach..."
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              maxLength={2000}
-              onSubmitEditing={() => handleSend()}
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendBtn,
-                {
-                  backgroundColor: input.trim() && !isLoading ? colors.primary : colors.muted,
-                },
-              ]}
-              onPress={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              activeOpacity={0.85}
-            >
+      <View
+        style={[
+          styles.inputBar,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+            paddingBottom: tabBarHeight + (Platform.OS === "android" ? 8 : 0),
+          },
+        ]}
+      >
+        <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TextInput
+            style={[styles.input, { color: colors.foreground }]}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Ask your interview coach..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            maxLength={2000}
+            returnKeyType="send"
+            onSubmitEditing={() => handleSend()}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendBtn,
+              {
+                backgroundColor: input.trim() && !isLoading ? colors.primary : colors.muted,
+              },
+            ]}
+            onPress={() => handleSend()}
+            disabled={!input.trim() || isLoading}
+            activeOpacity={0.85}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
               <Feather
                 name="send"
-                size={16}
-                color={input.trim() && !isLoading ? colors.primaryForeground : colors.mutedForeground}
+                size={15}
+                color={input.trim() ? colors.primaryForeground : colors.mutedForeground}
               />
-            </TouchableOpacity>
-          </View>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -258,32 +287,37 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  headerSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  headerTitle: { fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
+  headerStatusRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  headerSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
   clearBtn: {
-    marginLeft: "auto",
-    padding: 8,
-    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 20,
     borderWidth: 1,
   },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_500Medium" },
   messageList: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-  bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, maxWidth: "100%" },
+  bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   bubbleRowUser: { justifyContent: "flex-end" },
   bubbleRowAI: { justifyContent: "flex-start" },
   aiBadge: {
@@ -295,28 +329,33 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginBottom: 2,
   },
-  bubble: { maxWidth: "78%", borderRadius: 16, padding: 12 },
-  userBubble: { borderBottomRightRadius: 4 },
-  aiBubble: { borderWidth: 1, borderBottomLeftRadius: 4 },
-  bubbleText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21 },
-  suggestionsWrap: { marginTop: 12, gap: 8 },
-  suggestLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  suggestions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  bubble: { maxWidth: "78%", borderRadius: 18, padding: 13 },
+  userBubble: { borderBottomRightRadius: 5 },
+  aiBubble: { borderWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: 5 },
+  bubbleText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
+  dots: { flexDirection: "row", gap: 4, alignItems: "center" },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  suggestionsWrap: { marginTop: 16, gap: 10 },
+  suggestLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, paddingHorizontal: 2 },
+  chipsScroll: { marginTop: 2 },
   suggestionChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 22,
     borderWidth: 1,
   },
   suggestionText: { fontSize: 13, fontFamily: "Inter_400Regular" },
-  inputBar: { borderTopWidth: 1, paddingHorizontal: 12, paddingTop: 10 },
+  inputBar: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingTop: 10 },
   inputWrap: {
     flexDirection: "row",
     alignItems: "flex-end",
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     gap: 8,
   },
   input: {
@@ -324,13 +363,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     maxHeight: 100,
-    paddingVertical: 6,
+    paddingVertical: 5,
     lineHeight: 20,
   },
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,

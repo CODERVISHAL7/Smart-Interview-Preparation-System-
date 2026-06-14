@@ -99,18 +99,25 @@ export default function ProfileScreen() {
   const topPaddingWeb = Platform.OS === "web" ? 67 : 0;
   const bottomPaddingWeb = Platform.OS === "web" ? 34 : 0;
 
-  const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-          router.replace("/(auth)/sign-in");
+  const handleSignOut = async () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Are you sure you want to sign out?");
+      if (!confirmed) return;
+      await signOut();
+      router.replace("/(auth)/sign-in");
+    } else {
+      Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   return (

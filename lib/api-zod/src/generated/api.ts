@@ -115,22 +115,6 @@ export const SubmitAnswerBody = zod.object({
 });
 
 /**
- * @summary Send a message to the AI interview coach
- */
-export const SendChatMessageBody = zod.object({
-  messages: zod.array(
-    zod.object({
-      role: zod.enum(["user", "assistant"]),
-      content: zod.string(),
-    }),
-  ),
-});
-
-export const SendChatMessageResponse = zod.object({
-  reply: zod.string(),
-});
-
-/**
  * @summary Evaluate all answers for a session and generate report
  */
 export const EvaluateInterviewBody = zod.object({

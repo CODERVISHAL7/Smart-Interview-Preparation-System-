@@ -18,8 +18,6 @@ import type {
 
 import type {
   ApiError,
-  ChatRequest,
-  ChatResponse,
   EvaluateInterviewBody,
   EvaluationResult,
   HealthStatus,
@@ -448,92 +446,6 @@ export const useSubmitAnswer = <
   TContext
 > => {
   return useMutation(getSubmitAnswerMutationOptions(options));
-};
-
-/**
- * @summary Send a message to the AI interview coach
- */
-export const getSendChatMessageUrl = () => {
-  return `/api/chat`;
-};
-
-export const sendChatMessage = async (
-  chatRequest: ChatRequest,
-  options?: RequestInit,
-): Promise<ChatResponse> => {
-  return customFetch<ChatResponse>(getSendChatMessageUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(chatRequest),
-  });
-};
-
-export const getSendChatMessageMutationOptions = <
-  TError = ErrorType<ApiError>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof sendChatMessage>>,
-    TError,
-    { data: BodyType<ChatRequest> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof sendChatMessage>>,
-  TError,
-  { data: BodyType<ChatRequest> },
-  TContext
-> => {
-  const mutationKey = ["sendChatMessage"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof sendChatMessage>>,
-    { data: BodyType<ChatRequest> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return sendChatMessage(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SendChatMessageMutationResult = NonNullable<
-  Awaited<ReturnType<typeof sendChatMessage>>
->;
-export type SendChatMessageMutationBody = BodyType<ChatRequest>;
-export type SendChatMessageMutationError = ErrorType<ApiError>;
-
-/**
- * @summary Send a message to the AI interview coach
- */
-export const useSendChatMessage = <
-  TError = ErrorType<ApiError>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof sendChatMessage>>,
-    TError,
-    { data: BodyType<ChatRequest> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof sendChatMessage>>,
-  TError,
-  { data: BodyType<ChatRequest> },
-  TContext
-> => {
-  return useMutation(getSendChatMessageMutationOptions(options));
 };
 
 /**

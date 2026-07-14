@@ -12,8 +12,6 @@ tags:
     description: Health operations
   - name: interview
     description: Interview session operations
-  - name: chat
-    description: AI coach chat operations
 paths:
   /healthz:
     get:
@@ -114,30 +112,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InterviewAnswer"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-  /chat:
-    post:
-      operationId: sendChatMessage
-      tags: [chat]
-      summary: Send a message to the AI interview coach
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChatRequest"
-      responses:
-        "200":
-          description: AI reply
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ChatResponse"
         "401":
           description: Unauthorized
           content:
@@ -416,33 +390,6 @@ components:
         - feedback
         - strengths
         - weaknesses
-    ChatMessage:
-      type: object
-      properties:
-        role:
-          type: string
-          enum: [user, assistant]
-        content:
-          type: string
-      required:
-        - role
-        - content
-    ChatRequest:
-      type: object
-      properties:
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/ChatMessage"
-      required:
-        - messages
-    ChatResponse:
-      type: object
-      properties:
-        reply:
-          type: string
-      required:
-        - reply
     EvaluationResult:
       type: object
       properties:
